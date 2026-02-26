@@ -4,18 +4,17 @@ buildscript {
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-        classpath "com.netflix.nebula:gradle-extra-configurations-plugin:2.2.0"
-        classpath "io.github.gradle-nexus:publish-plugin:1.0.0"
+        classpath "io.github.gradle-nexus:publish-plugin:1.3.0"
         classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
-        classpath "io.github.groovylang.groovydoc:groovydoc-gradle-plugin:1.0.1"
     }
 }
 
-project.ext {
-    isTravisBuild = System.getenv().get("TRAVIS") == 'true'
+ext {
+    groovyVersion = System.getenv('CI_GROOVY_VERSION') ?: project.groovyVersion
     // overall project version
-    isCiBuild = project.hasProperty("isCiBuild")
-    isBuildSnapshot = version.endsWith("-SNAPSHOT")
+    isCiBuild = System.getenv().get("CI") as Boolean
+    isSnapshot = project.projectVersion.endsWith("-SNAPSHOT")
+    isReleaseVersion = !isSnapshot
 
     nexusUsername = System.getenv("SONATYPE_USERNAME") ?: project.hasProperty("sonatypeOssUsername") ? project.sonatypeOssUsername : ''
     nexusPassword = System.getenv("SONATYPE_PASSWORD") ?: project.hasProperty("sonatypeOssPassword") ? project.sonatypeOssPassword : ''
@@ -37,20 +36,21 @@ group = "org.grails"
 apply plugin: 'idea'
 apply plugin: 'project-report'
 
-ext {
-    isCiBuild = project.hasProperty("isCiBuild")
-}
-
 allprojects {
+
+    ext.groovyVersion = System.getenv('CI_GROOVY_VERSION') ?: project.groovyVersion
+
     repositories {
-        maven { url "https://repo.grails.org/grails/core" }
-        if(isBuildSnapshot) {
-            maven { url "https://repo.grails.org/grails/libs-snapshots-local" }
+        mavenLocal()
+        mavenCentral()
+        maven { url = 'https://repo.grails.org/grails/core' }
+        if(isSnapshot) {
+            maven { url = 'https://repo.grails.org/grails/libs-snapshots-local' }
         }
         if(groovyVersion && groovyVersion.endsWith('-SNAPSHOT')) {
             maven {
-                name 'JFrog OSS snapshot repo'
-                url 'https://oss.jfrog.org/oss-snapshot-local/'
+                name = 'JFrog Groovy snapshot repo'
+                url = 'https://groovy.jfrog.io/artifactory/libs-snapshot-local'
             }
         }
     }
@@ -70,17 +70,18 @@ allprojects {
 apply from: "gradle/idea.gradle"
 
 subprojects {
+
     configurations {
         documentation
     }
    version = project.projectVersion
    group = "org.grails"
 
-   afterEvaluate { project ->
-        if (isGroovyProject(project)) {
-            def hasSnapshotVersion = project.version.endsWith("-SNAPSHOT")
-            if(isBuildSnapshot != hasSnapshotVersion) {
-                throw new StopExecutionException("${project.name} has version \"${project.version}\" which is${isBuildSnapshot ? 'n\'t' : ''} a snapshot version.")
+   afterEvaluate { subproject ->
+        if (isGroovyProject(subproject)) {
+            def hasSnapshotVersion = subproject.version.endsWith("-SNAPSHOT")
+            if(isSnapshot != hasSnapshotVersion) {
+                throw new StopExecutionException("${subproject.name} has version \"${subproject.version}\" which is${isSnapshot ? 'n\'t' : ''} a snapshot version.")
             }
         }
     }
@@ -93,8 +94,9 @@ subprojects {
         apply plugin: 'eclipse'
         apply plugin: 'idea'
         apply plugin: 'java-library'
-        sourceCompatibility = "1.8"
-        targetCompatibility = "1.8"
+
+        sourceCompatibility = 1.11
+        targetCompatibility = 1.11
     }
 
     def isGormDatasource = project.name.startsWith("grails-datastore-gorm-") &&
@@ -110,25 +112,25 @@ subprojects {
         api "javax.annotation:javax.annotation-api:$javaAnnotationApiVersion"
 
         if (isStandardGroovyMavenProject) {
-            documentation "org.fusesource.jansi:jansi:2.1.1"
+            documentation "org.fusesource.jansi:jansi:2.4.0"
             documentation "org.codehaus.groovy:groovy-dateutil:$groovyVersion"
-            documentation 'info.picocli:picocli:4.6.1'
+            documentation 'info.picocli:picocli:4.6.3'
             documentation ("com.github.javaparser:javaparser-core:$javaParserCoreVersion")
 
             api "org.codehaus.groovy:groovy:$groovyVersion"
             testImplementation "org.codehaus.groovy:groovy-test-junit5:$groovyVersion"
-            testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.0"
-            testImplementation "org.junit.platform:junit-platform-runner:1.7.0"
-            testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"
+            testImplementation "org.junit.jupiter:junit-jupiter-api:5.9.1"
+            testImplementation "org.junit.platform:junit-platform-runner:1.9.1"
+            testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.9.1"
 
             testImplementation(spockDependency) { transitive = false }
         }
 
         if (project.name == "grails-datastore-gorm-tck") {
             api "org.codehaus.groovy:groovy-test-junit5:$groovyVersion"
-            api "org.junit.jupiter:junit-jupiter-api:5.7.0"
-            api "org.junit.platform:junit-platform-runner:1.7.0"
-            runtimeOnly "org.junit.jupiter:junit-jupiter-engine:5.7.0"
+            api "org.junit.jupiter:junit-jupiter-api:5.9.1"
+            api "org.junit.platform:junit-platform-runner:1.9.1"
+            runtimeOnly "org.junit.jupiter:junit-jupiter-engine:5.9.1"
             implementation(spockDependency) { transitive = false }
         }
     }
@@ -168,7 +170,7 @@ subprojects {
             testLogging {
                 exceptionFormat ='full'
             }
-            if (isTravisBuild) {
+            if (isCiBuild) {
                 maxParallelForks = 2
                 jvmArgs = ['-server', '-Xmx1024M']
                 forkEvery = 20
@@ -239,13 +241,13 @@ configurations {
 
 dependencies {
     build "com.cenqua.clover:clover:3.3.0"
-    build "org.apache.ant:ant-junit:1.10.9"
+    build "org.apache.ant:ant-junit:1.10.12"
     build "org.apache.ant:ant-nodeps:1.8.1"
 }
 
 task install(dependsOn: subprojects*.tasks*.withType(PublishToMavenLocal))
 
-apply from: 'https://raw.githubusercontent.com/grails/grails-common-build/1.0.x/common-publishing.gradle'
+apply from: 'https://raw.githubusercontent.com/grails/grails-common-build/master/common-publishing.gradle'
 
 task test(dependsOn: getTasksByName("test", true)) {
      doLast {
@@ -276,6 +278,15 @@ task test(dependsOn: getTasksByName("test", true)) {
              report(todir: testReportsDir)
          }
      }
+}
+
+if (isReleaseVersion) {
+    nexusPublishing {
+        transitionCheckOptions {
+            maxRetries.set(50)
+            delayBetween.set(java.time.Duration.ofMillis(5000))
+        }
+    }
 }
 
 project.afterEvaluate {

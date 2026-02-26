@@ -47,12 +47,18 @@ dependencies {
     compileOnly "org.springframework:spring-webmvc:$springVersion"
     compileOnly "org.grails:grails-web-url-mappings:$grailsVersion", { transitive = false }
     compileOnly "org.grails:grails-web-common:$grailsVersion", { transitive = false }
-    compileOnly("org.hibernate:hibernate-core:${hibernateVersion}.Final") {
+    compileOnly("org.hibernate:hibernate-core:${hibernateVersion}") {
         exclude group:'commons-logging', module:'commons-logging'
         exclude group:'commons-collections', module:'commons-collections'
         exclude group:'org.slf4j', module:'slf4j-api'
         exclude group:'xml-apis', module:'xml-apis'
         exclude group:'dom4j', module:'dom4j'
         exclude group:'antlr', module: 'antlr'
+    }
+}
+
+project.tasks.withType(Jar) {
+    configure {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 }

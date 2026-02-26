@@ -23,13 +23,13 @@ import java.util.concurrent.ConcurrentHashMap
 class RxGormEnhancer {
 
     private static final Map<String, Map<String,RxGormStaticApi>> STATIC_APIS = new ConcurrentHashMap<String, Map<String,RxGormStaticApi>>().withDefault { String key ->
-        return new ConcurrentHashMap<String, RxGormStaticApi>()
+        return new ConcurrentHashMap() as Map<String, RxGormStaticApi>
     }
     private static final Map<String, Map<String, RxGormInstanceApi>> INSTANCE_APIS = new ConcurrentHashMap<String, Map<String, RxGormInstanceApi>>().withDefault { String key ->
-        return new ConcurrentHashMap<String, RxGormInstanceApi>()
+        return new ConcurrentHashMap() as Map<String, RxGormInstanceApi>
     }
     private static final Map<String, Map<String, RxGormValidationApi>> VALIDATION_APIS = new ConcurrentHashMap<String, Map<String, RxGormValidationApi>>().withDefault { String key ->
-        return new ConcurrentHashMap<String, RxGormValidationApi>()
+        return new ConcurrentHashMap() as Map<String, RxGormValidationApi>
     }
     private static final Map<Class<? extends RxDatastoreClient>, RxDatastoreClient> DATASTORE_CLIENTS = new ConcurrentHashMap<Class<? extends RxDatastoreClient>, RxDatastoreClient>()
 
@@ -62,7 +62,7 @@ class RxGormEnhancer {
         }
 
         if(MultiTenant.isAssignableFrom(entity.javaClass) || defaultConnectionSource == ConnectionSource.ALL) {
-            for(ConnectionSource cs in client.getConnectionSources()) {
+            for(ConnectionSource cs in client.getConnectionSources().getAllConnectionSources()) {
                 registerEntityWithConnectionSource(entity, cs.name, cs.name, rxDatastoreClientImplementor)
             }
         }
@@ -115,7 +115,7 @@ class RxGormEnhancer {
      * @param entity
      * @return
      */
-    static String findTenantId(Class entity) {
+    static <T> String findTenantId(Class<T> entity) {
         if(MultiTenant.isAssignableFrom(entity)) {
             RxDatastoreClient datastoreClient = findStaticApi(entity, ConnectionSource.DEFAULT).datastoreClient
             if(datastoreClient.multiTenancyMode == MultiTenancySettings.MultiTenancyMode.DATABASE) {

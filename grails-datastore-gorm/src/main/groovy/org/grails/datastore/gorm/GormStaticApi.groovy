@@ -36,6 +36,7 @@ import org.grails.datastore.mapping.core.Session
 import org.grails.datastore.mapping.core.SessionCallback
 import org.grails.datastore.mapping.core.StatelessDatastore
 import org.grails.datastore.mapping.core.connections.ConnectionSource
+import org.grails.datastore.mapping.core.connections.ConnectionSourceSettings
 import org.grails.datastore.mapping.core.connections.ConnectionSources
 import org.grails.datastore.mapping.core.connections.ConnectionSourcesProvider
 import org.grails.datastore.mapping.model.PersistentEntity
@@ -79,7 +80,7 @@ class GormStaticApi<D> extends AbstractGormApi<D> implements GormAllOperations<D
         String qualifier = ConnectionSource.DEFAULT
         if(datastore instanceof ConnectionSourcesProvider) {
             this.connectionSources = ((ConnectionSourcesProvider) datastore).connectionSources
-            ConnectionSource defaultConnectionSource = connectionSources.defaultConnectionSource
+            ConnectionSource<?, ? extends ConnectionSourceSettings> defaultConnectionSource = connectionSources.defaultConnectionSource
             qualifier = defaultConnectionSource.name
             multiTenancyMode = defaultConnectionSource.settings.multiTenancy.mode
 
@@ -332,7 +333,7 @@ class GormStaticApi<D> extends AbstractGormApi<D> implements GormAllOperations<D
     }
 
     /**
-     * Retrieves and object from the datastore. eg. Book.get(1)
+     * Retrieves an object from the datastore. eg. Book.get(1)
      */
     D get(Serializable id) {
         (D)execute({ Session session ->
@@ -341,7 +342,7 @@ class GormStaticApi<D> extends AbstractGormApi<D> implements GormAllOperations<D
     }
 
     /**
-     * Retrieves and object from the datastore. eg. Book.read(1)
+     * Retrieves an object from the datastore. eg. Book.read(1)
      *
      * Since the datastore abstraction doesn't support dirty checking yet this
      * just delegates to {@link #get(Serializable)}
@@ -353,7 +354,7 @@ class GormStaticApi<D> extends AbstractGormApi<D> implements GormAllOperations<D
     }
 
     /**
-     * Retrieves and object from the datastore as a proxy. eg. Book.load(1)
+     * Retrieves an object from the datastore as a proxy. eg. Book.load(1)
      */
     D load(Serializable id) {
         (D)execute ({ Session session ->
@@ -362,7 +363,7 @@ class GormStaticApi<D> extends AbstractGormApi<D> implements GormAllOperations<D
     }
 
     /**
-     * Retrieves and object from the datastore as a proxy. eg. Book.proxy(1)
+     * Retrieves an object from the datastore as a proxy. eg. Book.proxy(1)
      */
     D proxy(Serializable id) {
         load(id)

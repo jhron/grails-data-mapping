@@ -81,7 +81,7 @@ class RxPersistentSet extends PersistentSet implements RxPersistentCollection, R
     @Override
     void initialize() {
         if(initializing != null) return
-        initializing = true
+        initializing = Boolean.TRUE
 
         try {
             def observable = toListObservable()
@@ -104,7 +104,7 @@ class RxPersistentSet extends PersistentSet implements RxPersistentCollection, R
     @Override
     List<Serializable> getAssociationKeys() {
         if(keys != null) {
-            return keys.toList()
+            return keys.toList() as List<Serializable>
         }
         else {
             return Collections.emptyList()

@@ -33,17 +33,17 @@ trait ValidatedService<T> extends Service<T> {
     /**
      * The validator factory
      */
-    private ValidatorFactory validatorFactory
+    private ValidatorFactory validatorFactoryInstance
 
-    private Map<Method, ExecutableValidator> executableValidatorMap = new LinkedHashMap<Method,ExecutableValidator>().withDefault {
-        getValidatorFactory().getValidator().forExecutables()
+    private Map<Method, ExecutableValidator> executableValidatorMap = new LinkedHashMap<Method, ExecutableValidator>().withDefault {
+        validatorFactory.getValidator().forExecutables()
     }
 
     /**
      * @return The validator factory for this service
      */
     ValidatorFactory getValidatorFactory() {
-        if(validatorFactory == null) {
+        if(validatorFactoryInstance == null) {
 
             Configuration configuration
             if(datastore != null) {
@@ -60,9 +60,9 @@ trait ValidatedService<T> extends Service<T> {
             if(parameterNameProvider != null) {
                 configuration = configuration.parameterNameProvider(parameterNameProvider)
             }
-            validatorFactory = configuration.buildValidatorFactory()
+            validatorFactoryInstance = configuration.buildValidatorFactory()
         }
-        return validatorFactory
+        return validatorFactoryInstance
     }
 
     /**
